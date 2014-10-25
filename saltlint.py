@@ -106,8 +106,9 @@ def ParseError(filename, line, message):
   return {'filename':filename,'line':line,'message':message}
 
 def run(filename):
-  ERRORS = []
-  ERRORS = ERRORS + tabcheck(filename) + indentcheck(filename) + slscheck(filename)
+  ERRORS = tabcheck(filename)
+  if len(ERRORS) == 0:
+    ERRORS = [] + indentcheck(filename) + slscheck(filename)
   return ERRORS
 
 if __name__ == '__main__':
