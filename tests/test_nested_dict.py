@@ -4,7 +4,7 @@ import sys
 sys.path.append('.')
 
 import saltlint
-errors = saltlint.indentcheck('tests/states/nested_dict.sls')
+errors = saltlint.run('tests/states/nested_dict.sls')
 
 def test_indent():
   assert len(errors) == 2

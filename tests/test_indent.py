@@ -4,7 +4,7 @@ import sys
 sys.path.append('.')
 
 import saltlint
-errors = saltlint.indentcheck('tests/states/soft_tabs.sls')
+errors = saltlint.run('tests/states/soft_tabs.sls')
 
 def test_indent():
   assert len(errors) == 2

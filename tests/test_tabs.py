@@ -4,7 +4,7 @@ import sys
 sys.path.append('.')
 
 import saltlint
-errors = saltlint.tabcheck('tests/states/tab_characters.sls')
+errors = saltlint.run('tests/states/tab_characters.sls')
 
 def test_tabs():
   assert len(errors) == 1
