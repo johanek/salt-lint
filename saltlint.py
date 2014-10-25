@@ -66,11 +66,11 @@ def slscheck(filename):
 
   prog = re.compile(r'.*\.')
 
-  content = open(filename).read()
   __opts__ = salt.config.minion_config('/etc/salt/minion')
   renderers = salt.loader.render(__opts__, {})
 
   try:
+    content = renderers['jinja'](filename)
     data = renderers['yaml'](content)
   except salt.exceptions.SaltRenderError as error:
     ERRORS.append(ParseError(filename, 0, error))
