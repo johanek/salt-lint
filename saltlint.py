@@ -96,7 +96,7 @@ def slscheck(filename):
         for opt in options:
           option = opt.keys()[0]
           if option not in args:
-            ERRORS.append(ParseError(filename, 0, '%s state with id \'%s\' contains unknown option \'%s\'' % (state, id, option )))
+            ERRORS.append(ParseError(filename, 0, '%s state with id \'%s\' contains unknown option \'%s\'' % (state, id, option)))
       except:
         ERRORS.append(ParseError(filename, 0, '%s state with id \'%s\' contains unknown method \'%s\'' % (state, id, method)))
 
