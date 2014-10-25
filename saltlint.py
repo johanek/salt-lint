@@ -93,7 +93,7 @@ def slscheck(filename):
 
       try:
         args = getargspec(getattr(package, method)).args
-        for opt in options[1:]:
+        for opt in options:
           option = opt.keys()[0]
           if option not in args:
             ERRORS.append(ParseError(filename, 0, '%s state with id \'%s\' contains unknown option \'%s\'' % (state, id, option )))
