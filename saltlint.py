@@ -47,10 +47,17 @@ def indentcheck(filename):
   required = 2
   count = 1
   nested = 0
+  maximum = False
 
   with open(filename) as file:
     for line in file:
       current = len(line) - len(line.lstrip())
+
+      if maximum:
+        if current > maximum:
+          break
+        else:
+          maximum = False
 
       if current > previous:
         tabsize = current - previous
@@ -63,12 +70,16 @@ def indentcheck(filename):
 
       """ context and default options are nested dicts - need 4 space tabs
           http://docs.saltstack.com/en/latest/topics/troubleshooting/yaml_idiosyncrasies.html """
-      match = re.search('context|defaults:', line)
+      match = re.search('context:|defaults:', line)
 
       if match:
         nested = 1
       else:
         nested = 0
+
+      """ don't check indent of datasets """
+      if re.search('dataset:', line):
+        maximum = current
 
       count +=1
       previous = current
