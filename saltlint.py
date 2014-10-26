@@ -42,8 +42,7 @@ def indentcheck(filename):
         if nested == 1:
           if tabsize != 4:
             ERRORS.append(ParseError(filename, count, 'Four space soft tabs for nested dict not found - %s space tab found' % tabsize))
-
-        if tabsize not in [0, required]:
+        elif tabsize not in [0, required]:
           ERRORS.append(ParseError(filename, count, 'Two space soft tabs not found - %s space tab found' % tabsize))
 
       """ context and default options are nested dicts - need 4 space tabs
