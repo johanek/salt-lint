@@ -24,6 +24,22 @@ def tabcheck(filename):
       count += 1
   return ERRORS
 
+def trailingwscheck(filename):
+
+  ERRORS = []
+  prog = re.compile(r'\s+\n')
+  count = 1
+
+  with open(filename) as file:
+    for line in file:
+      match = prog.search(line)
+
+      if match:
+        ERRORS.append(ParseError(filename, count, 'Trailing whitespace found'))
+
+      count += 1
+  return ERRORS
+
 def indentcheck(filename):
 
   ERRORS = []
@@ -109,7 +125,7 @@ def ParseError(filename, line, message):
 def run(filename):
   ERRORS = tabcheck(filename)
   if len(ERRORS) == 0:
-    ERRORS = [] + indentcheck(filename) + slscheck(filename)
+    ERRORS = [] + trailingwscheck(filename) + indentcheck(filename) + slscheck(filename)
   return ERRORS
 
 if __name__ == '__main__':
