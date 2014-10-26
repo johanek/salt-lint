@@ -121,6 +121,12 @@ def slscheck(filename):
 
       try:
         args = getargspec(getattr(package, method)).args
+        
+        """ extra options not available to getargspec """
+        args = args + ['watch', 'watch_in', 'require', 'require_in']
+        if state == 'file' and method == 'serialize':
+          args.append('formatter')
+
         for opt in options:
           option = opt.keys()[0]
           if option not in args:
