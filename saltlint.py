@@ -77,6 +77,9 @@ def slscheck(filename):
     return ERRORS
 
   for id, v in data.items():
+
+    if id in ['include', 'exclude']:
+      break
     for state, options in v.items():
 
       match = prog.match(state)
