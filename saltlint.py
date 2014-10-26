@@ -29,7 +29,7 @@ def indentcheck(filename):
   ERRORS = []
   previous = 0
   required = 2
-  count = 0
+  count = 1
   nested = 0
 
   with open(filename) as file:
