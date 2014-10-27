@@ -8,95 +8,88 @@ from inspect import getargspec
 import importlib
 from IPython.core.debugger import Tracer
 
-def tabcheck(filename):
+def tabcheck(content, filename):
 
   ERRORS = []
   prog = re.compile(r'\t')
-  count = 1
 
-  with open(filename) as file:
-    for line in file:
-      match = prog.match(line)
-
-      if match:
-        ERRORS.append(ParseError(filename, count, 'Tab character(s) found'))
-
-      count += 1
+  for index, line in enumerate(content.split("\n")):
+    if prog.search(line):
+      ERRORS.append(ParseError(filename, index + 1, 'Tab character(s) found'))
   return ERRORS
 
-def trailingwscheck(filename):
+def trailingwscheck(content, filename):
 
   ERRORS = []
-  prog = re.compile(r'\s+\n')
-  count = 1
+  prog = re.compile(r'\s+$')
 
-  with open(filename) as file:
-    for line in file:
-      match = prog.search(line)
-
-      if match:
-        ERRORS.append(ParseError(filename, count, 'Trailing whitespace found'))
-
-      count += 1
+  for index, line in enumerate(content.split("\n")):
+    if prog.search(line):
+      ERRORS.append(ParseError(filename, index + 1, 'Trailing whitespace found'))
   return ERRORS
 
-def indentcheck(filename):
+def indentcheck(content, filename):
 
   ERRORS = []
   previous = 0
   required = 2
-  count = 1
   nested = 0
   maximum = False
 
-  with open(filename) as file:
-    for line in file:
-      current = len(line) - len(line.lstrip())
+  for index, line in enumerate(content.split("\n")):
 
-      if maximum:
-        if current > maximum:
-          break
-        else:
-          maximum = False
+    """ check indent of line """
+    current = len(line) - len(line.lstrip())
 
-      if current > previous:
-        tabsize = current - previous
-
-        if nested == 1:
-          if tabsize != 4:
-            ERRORS.append(ParseError(filename, count, 'Four space soft tabs for nested dict not found - %s space tab found' % tabsize))
-        elif tabsize not in [0, required]:
-          ERRORS.append(ParseError(filename, count, 'Two space soft tabs not found - %s space tab found' % tabsize))
-
-      """ context and default options are nested dicts - need 4 space tabs
-          http://docs.saltstack.com/en/latest/topics/troubleshooting/yaml_idiosyncrasies.html """
-      match = re.search('context:|defaults:', line)
-
-      if match:
-        nested = 1
+    """ don't check indent of datasets """
+    if maximum:
+      if current > maximum:
+        break
       else:
-        nested = 0
+        maximum = False
+    if re.search('dataset:', line):
+      maximum = current
 
-      """ don't check indent of datasets """
-      if re.search('dataset:', line):
-        maximum = current
+    """ run checks if indented compared to previous line """
+    if current > previous:
+      tabsize = current - previous
 
-      count +=1
-      previous = current
+      if nested == 1:
+        if tabsize != 4:
+          ERRORS.append(ParseError(filename, index + 1, 'Four space soft tabs for nested dict not found - %s space tab found' % tabsize))
+      elif tabsize not in [0, required]:
+        ERRORS.append(ParseError(filename, index + 1, 'Two space soft tabs not found - %s space tab found' % tabsize))
 
-    return ERRORS
+    """ context and default options are nested dicts - need 4 space tabs
+        http://docs.saltstack.com/en/latest/topics/troubleshooting/yaml_idiosyncrasies.html """
+    if re.search('context:|defaults:', line):
+      nested = 1
+    else:
+      nested = 0
 
-def slscheck(filename):
+    previous = current
+  return ERRORS
+
+def jinjacheck(filename):
+  ERRORS = []
+  content = ""
+  renderers = getrenderers()
+
+  try:
+    content = renderers['jinja'](filename).read()
+  except salt.exceptions.SaltRenderError as error:
+    ERRORS.append(ParseError(filename, 0, error))
+
+  return content, ERRORS
+
+def slscheck(content, filename):
 
   ERRORS = []
 
   prog = re.compile(r'.*\.')
-
-  __opts__ = salt.config.minion_config('/etc/salt/minion')
-  renderers = salt.loader.render(__opts__, {})
+  renderers = getrenderers()
 
   try:
-    content = renderers['jinja'](filename)
     data = renderers['yaml'](content)
   except salt.exceptions.SaltRenderError as error:
     ERRORS.append(ParseError(filename, 0, error))
@@ -121,7 +114,7 @@ def slscheck(filename):
 
       try:
         args = getargspec(getattr(package, method)).args
-        
+
         """ extra options not available to getargspec """
         args = args + ['watch', 'watch_in', 'require', 'require_in']
         if state == 'file' and method == 'serialize':
@@ -136,14 +129,21 @@ def slscheck(filename):
 
   return ERRORS
 
+def getrenderers():
+  __opts__ = salt.config.minion_config('/etc/salt/minion')
+  renderers = salt.loader.render(__opts__, {})
+  return renderers
+
 def ParseError(filename, line, message):
   return {'filename':filename,'line':line,'message':message}
 
 def run(filename):
-  ERRORS = tabcheck(filename)
+  content, ERRORS = jinjacheck(filename)
+  ERRORS = ERRORS + tabcheck(content, filename)
   if len(ERRORS) == 0:
-    ERRORS = [] + trailingwscheck(filename) + indentcheck(filename) + slscheck(filename)
+    ERRORS = ERRORS + trailingwscheck(content,filename) + indentcheck(content, filename) + slscheck(content, filename)
   return ERRORS
+
 
 if __name__ == '__main__':
 

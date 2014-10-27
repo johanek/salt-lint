@@ -4,7 +4,7 @@ import sys
 sys.path.append('.')
 
 import saltlint
-errors = saltlint.trailingwscheck('tests/states/trailing_whitespace.sls')
+errors = saltlint.run('tests/states/trailing_whitespace.sls')
 
 def test_trailing_whitespace():
   assert len(errors) == 1
