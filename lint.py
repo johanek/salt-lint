@@ -17,6 +17,8 @@ import tempfile
 from types import NoneType
 import re
 from voluptuous import *
+from inspect import getargspec
+import importlib
 
 # Import salt libs
 import salt.config
@@ -32,11 +34,21 @@ __outputter__ = {
 
 log = logging.getLogger(__name__)
 
-def _schema():
-    statemods = salt.loader.states(__opts__, __salt__)
-    argspecs = salt.utils.argspec_report(statemods)
 
-    specialargs = {
+def _getschema(state):
+
+    (module, function) = state.split('.')
+    try:
+        package = importlib.import_module("salt.states.%s" % module)
+    except:
+        return False
+
+    try:
+        argspec = getargspec(getattr(package, function))
+    except e:
+      return False
+
+    schema = {
         'name': Coerce(str),
         'names': list,
         'check_cmd': str,
@@ -59,18 +71,10 @@ def _schema():
         'formatter': str
     }
 
-    # define voluptuous schema
-    schema = {}
-    for state, specs in argspecs.iteritems():
-        s = specialargs.copy()
-        for idx, arg in enumerate(specs['args']):
-
-            # Don't overwrite args from specialargs
-            if arg in s:
-              break
-
+    for idx, arg in enumerate(argspec.args):
+        if arg not in schema:
             try:
-                default = specs['defaults'][idx]
+                default = argspec.defaults[idx]
             except:
                 default = 'nodefault'
             if type(default) == bool:
@@ -79,17 +83,15 @@ def _schema():
                 stype = Coerce(str)
             else:
                 stype = Coerce(type(default))
-            s[arg] = stype
-        schema[state] = Schema(s)
+            schema[arg] = stype
 
-    return schema
-
+    return Schema(schema)
 
 def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwargs):
 
-    schema = _schema()
-    data = __salt__['state.show_sls'](mods, saltenv, test, queue, env, kwargs=kwargs)
+    schema = {}
     ret = []
+    data = __salt__['state.show_sls'](mods, saltenv, test, queue, env, kwargs=kwargs)
 
     # iterate over states
     # TODO: add include, exclude to schema
@@ -102,6 +104,7 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
         # iterate over states
         for module, args in resource.items():
 
+            # Ignore data added by show_{sls,highstate}
             if module in ['__sls__', '__env__']:
                 break
 
@@ -112,10 +115,12 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
             else:
                 state = "%s.%s" % (module, args.pop(0))
 
-            # check function exists in scema
+            # check function exists in schema
             if state not in schema:
-                ret.append("%s: %s not part of schema" % (file, state))
-                break
+                schema[state] =  _getschema(state)
+                if schema[state] == False:
+                  ret.append("%s: %s not part of schema" % (file, state))
+                  break
 
             # iterate over arguments to make sure they're valid according to our schema
             for arg in args:
@@ -126,4 +131,6 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
                 except Exception as e:
                     ret.append("%s %s: Got %s for %s but %s" % (id, state, arg.itervalues().next(), arg.iterkeys().next(), e.msg))
 
+    if len(ret) > 0:
+        __context__['retcode'] = 1
     return ret
