@@ -5,15 +5,7 @@ Lint states and sls files
 from __future__ import absolute_import
 
 # Import python libs
-import os
-import json
-import copy
-import shutil
-import time
 import logging
-import tarfile
-import datetime
-import tempfile
 from types import NoneType
 import re
 from voluptuous import *
