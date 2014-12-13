@@ -26,9 +26,9 @@ __outputter__ = {
 
 log = logging.getLogger(__name__)
 
-
 def _getschema(state):
 
+    # Get argspec for state. Return False is not availanble.
     (module, function) = state.split('.')
     try:
         package = importlib.import_module("salt.states.%s" % module)
@@ -40,6 +40,7 @@ def _getschema(state):
     except e:
       return False
 
+    # Default schema for common functions
     schema = {
         'name': Coerce(str),
         'names': list,
@@ -63,6 +64,8 @@ def _getschema(state):
         'formatter': str
     }
 
+    # Identify arguments and default value. Add to schema dict inheriting
+    # type from default value. If no default value, assume string.
     for idx, arg in enumerate(argspec.args):
         if arg not in schema:
             try:
@@ -84,19 +87,21 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
     schema = {}
     ret = []
     data = __salt__['state.show_sls'](mods, saltenv, test, queue, env, kwargs=kwargs)
-
-    # iterate over states
-    # TODO: add include, exclude to schema
-    #       handle context, defaults better
     prog = re.compile(r'.*\.')
+
+    # iterate over ids
     for id, resource in data.items():
+
+        # TODO: include and exclude are just lists of states and don't have any arguments
+        #       we could just be validating that they're a list
         if id in ['include', 'exclude']:
             break
 
         # iterate over states
         for module, args in resource.items():
 
-            # Ignore data added by show_{sls,highstate}
+            # Ignore dunder dicts
+            # TODO: not sure breaking is the right thing to do here
             if module in ['__sls__', '__env__']:
                 break
 
@@ -107,7 +112,8 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
             else:
                 state = "%s.%s" % (module, args.pop(0))
 
-            # check function exists in schema
+            # add state to schema, and check state is valid
+            # TODO: not sure breaking is the right thing to do here
             if state not in schema:
                 schema[state] =  _getschema(state)
                 if schema[state] == False:
@@ -115,6 +121,8 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
                   break
 
             # iterate over arguments to make sure they're valid according to our schema
+            # TODO: not sure breaking is the right thing to do here - handle context & defaults better?
+            #       should they just be dicts?
             for arg in args:
                 if arg.iterkeys().next() in [ 'context', 'defaults' ]:
                     break
