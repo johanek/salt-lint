@@ -71,10 +71,12 @@ def _getschema(state):
     # type from default value. If no default value, assume string.
     for idx, arg in enumerate(argspec.args):
         if arg not in schema:
-            try:
-                default = argspec.defaults[idx]
-            except:
-                default = 'nodefault'
+            nodefaults = (len(argspec.args) - len(argspec.defaults))
+            if idx < nodefaults:
+                default = 'string'
+            else:
+                didx = (idx - nodefaults)
+                default = argspec.defaults[didx]
             if type(default) == bool:
                 stype = bool
             elif type(default) == NoneType:
