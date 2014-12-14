@@ -117,7 +117,7 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
                     continue
 
             # iterate over arguments to make sure they're valid according to our schema
-            for arg in args:
+            for arg in [e for e in args if type(e) != str]:
                 try:
                     schema[state](arg)
                 except Exception as e:
