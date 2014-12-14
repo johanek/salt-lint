@@ -85,7 +85,8 @@ def _getschema(state):
 def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwargs):
 
     schema = {}
-    ret = []
+    ret = {}
+    errors = []
     data = __salt__['state.show_sls'](mods, saltenv, test, queue, env, kwargs=kwargs)
     prog = re.compile(r'.*\.')
 
@@ -101,9 +102,8 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
         for module, args in resource.items():
 
             # Ignore dunder dicts
-            # TODO: not sure breaking is the right thing to do here
             if module in ['__sls__', '__env__']:
-                break
+                continue
 
             # find state name, i.e. cmd.run
             match = prog.match(module)
@@ -113,24 +113,25 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
                 state = "%s.%s" % (module, args.pop(0))
 
             # add state to schema, and check state is valid
-            # TODO: not sure breaking is the right thing to do here
             if state not in schema:
                 schema[state] =  _getschema(state)
                 if schema[state] == False:
                   ret.append("%s: %s not part of schema" % (file, state))
-                  break
+                  continue
 
             # iterate over arguments to make sure they're valid according to our schema
-            # TODO: not sure breaking is the right thing to do here - handle context & defaults better?
-            #       should they just be dicts?
+            # TODO: handle context & defaults better?
             for arg in args:
                 if arg.iterkeys().next() in [ 'context', 'defaults' ]:
-                    break
-                try:
-                    schema[state](arg)
-                except Exception as e:
-                    ret.append("%s %s: Got %s for %s but %s" % (id, state, arg.itervalues().next(), arg.iterkeys().next(), e.msg))
+                    continue
+                else:
+                    try:
+                        schema[state](arg)
+                    except Exception as e:
+                        errors.append("%s %s: Got %s for %s but %s" % (id, state, arg.itervalues().next(), arg.iterkeys().next(), e.msg))
+                    ret[id] = { state: { 'result': True } }
 
-    if len(ret) > 0:
-        __context__['retcode'] = 1
+    if len(errors) > 0:
+       __context__['retcode'] = 1
+       return errors
     return ret
