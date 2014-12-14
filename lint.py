@@ -41,6 +41,7 @@ def _getschema(state):
         return False
 
     # Default schema for common functions
+    # Add list of valid templates
     schema = {
         'context': OrderedDict,
         'defaults': OrderedDict,
@@ -59,6 +60,7 @@ def _getschema(state):
         'prereq_in': list,
         'require': list,
         'require_in': list,
+        'template': str,
         'unless': Coerce(str),
         'use': list,
         'watch': list,
