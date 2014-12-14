@@ -7,6 +7,7 @@ from __future__ import absolute_import
 # Import python libs
 import logging
 from types import NoneType
+from collections import OrderedDict
 import re
 from voluptuous import *
 from inspect import getargspec
@@ -28,7 +29,7 @@ log = logging.getLogger(__name__)
 
 def _getschema(state):
 
-    # Get argspec for state. Return False is not availanble.
+    # Get argspec for state. Return False is not available.
     (module, function) = state.split('.')
     try:
         package = importlib.import_module("salt.states.%s" % module)
@@ -42,6 +43,8 @@ def _getschema(state):
 
     # Default schema for common functions
     schema = {
+        'context': OrderedDict,
+        'defaults': OrderedDict,
         'name': Coerce(str),
         'names': list,
         'check_cmd': str,
@@ -120,16 +123,12 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
                   continue
 
             # iterate over arguments to make sure they're valid according to our schema
-            # TODO: handle context & defaults better?
             for arg in args:
-                if arg.iterkeys().next() in [ 'context', 'defaults' ]:
-                    continue
-                else:
-                    try:
-                        schema[state](arg)
-                    except Exception as e:
-                        errors.append("%s %s: Got %s for %s but %s" % (id, state, arg.itervalues().next(), arg.iterkeys().next(), e.msg))
-                    ret[id] = { state: { 'result': True } }
+                try:
+                    schema[state](arg)
+                except Exception as e:
+                    errors.append("%s %s: Got %s for %s but %s" % (id, state, arg.itervalues().next(), arg.iterkeys().next(), e.msg))
+                ret[id] = { state: { 'result': True } }
 
     if len(errors) > 0:
        __context__['retcode'] = 1
