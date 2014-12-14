@@ -113,8 +113,8 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
             if state not in schema:
                 schema[state] =  _getschema(state)
                 if schema[state] == False:
-                  ret.append("%s: %s not part of schema" % (file, state))
-                  continue
+                    errors.append("%s: %s not available in schema" % (id, state))
+                    continue
 
             # iterate over arguments to make sure they're valid according to our schema
             for arg in args:
