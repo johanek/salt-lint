@@ -8,7 +8,6 @@ from __future__ import absolute_import
 import logging
 from types import NoneType
 from collections import OrderedDict
-import re
 from voluptuous import *
 from inspect import getargspec
 import importlib
@@ -91,7 +90,6 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
     ret = {}
     errors = []
     data = __salt__['state.show_sls'](mods, saltenv, test, queue, env, kwargs=kwargs)
-    prog = re.compile(r'.*\.')
 
     # Errors returned from state
     if type(data) == list:
@@ -108,11 +106,8 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
                 continue
 
             # find state name, i.e. cmd.run
-            match = prog.match(module)
-            if match:
-                state = module
-            else:
-                state = "%s.%s" % (module, args.pop(0))
+            function = [e for e in args if type(e) == str][0]
+            state = "%s.%s" % (module, function)
 
             # add state to schema, and check state is valid
             if state not in schema:
