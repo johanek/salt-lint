@@ -125,7 +125,10 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
                 try:
                     schema[state](arg)
                 except Exception as e:
-                    errors.append("%s %s: Got %s for %s but %s" % (id, state, arg.itervalues().next(), arg.iterkeys().next(), e.msg))
+                    if e.msg == "extra keys not allowed":
+                        errors.append("%s: %s is not a valid argument for %s" % (id, arg.iterkeys().next(), state))
+                    else:
+                        errors.append("%s %s: Got %s for %s but %s" % (id, state, arg.itervalues().next(), arg.iterkeys().next(), e.msg))
                 ret[id][state] = { 'result': True }
 
     if len(errors) > 0:
