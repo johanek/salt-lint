@@ -38,8 +38,8 @@ def _getschema(state):
 
     try:
         argspec = getargspec(getattr(package, function))
-    except e:
-      return False
+    except Exception as e:
+        return False
 
     # Default schema for common functions
     schema = {
