@@ -96,11 +96,6 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
     # iterate over ids
     for id, resource in data.items():
 
-        # TODO: include and exclude are just lists of states and don't have any arguments
-        #       we could just be validating that they're a list
-        if id in ['include', 'exclude']:
-            break
-
         # iterate over states
         for module, args in resource.items():
 
