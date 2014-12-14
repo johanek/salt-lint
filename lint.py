@@ -97,6 +97,7 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
 
     # iterate over ids
     for id, resource in data.items():
+        ret[id] = {}
 
         # iterate over states
         for module, args in resource.items():
@@ -122,7 +123,7 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
                     schema[state](arg)
                 except Exception as e:
                     errors.append("%s %s: Got %s for %s but %s" % (id, state, arg.itervalues().next(), arg.iterkeys().next(), e.msg))
-                ret[id] = { state: { 'result': True } }
+                ret[id][state] = { 'result': True }
 
     if len(errors) > 0:
        __context__['retcode'] = 1
