@@ -17,7 +17,6 @@ import salt.config
 import salt.utils
 import salt.state
 import salt.payload
-from salt.ext.six import string_types
 from salt.exceptions import SaltInvocationError
 
 __outputter__ = {
