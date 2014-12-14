@@ -93,6 +93,10 @@ def validate_sls(mods, saltenv='base', test=None, queue=False, env=None, **kwarg
     data = __salt__['state.show_sls'](mods, saltenv, test, queue, env, kwargs=kwargs)
     prog = re.compile(r'.*\.')
 
+    # Errors returned from state
+    if type(data) == list:
+      return data
+
     # iterate over ids
     for id, resource in data.items():
 
