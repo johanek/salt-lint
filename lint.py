@@ -11,7 +11,6 @@ from collections import OrderedDict
 from voluptuous import *
 from inspect import getargspec
 import importlib
-from IPython.core.debugger import Tracer
 
 # Import salt libs
 import salt.config
