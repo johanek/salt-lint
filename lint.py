@@ -11,6 +11,7 @@ from collections import OrderedDict
 from voluptuous import *
 from inspect import getargspec
 import importlib
+from IPython.core.debugger import Tracer
 
 # Import salt libs
 import salt.config
@@ -66,6 +67,29 @@ def _getschema(state):
         'watch_in': list,
         'formatter': str
     }
+
+    # pkgrepo doesn't have arguments defined in the state. define them here
+    pkgrepo_schema = {
+        'baseurl': str,
+        'comments': list,
+        'comps': str,
+        'consolidate': bool,
+        'disabled': bool,
+        'dist': str,
+        'file': str,
+        'gpgcheck': int,
+        'gpgkey': str,
+        'humanname': str,
+        'keyserver': str,
+        'key_urk': str,
+        'mirrorlist': str,
+        'ppa': str,
+        'ppa_auth': str,
+        'refresh_db': bool
+    }
+
+    if state in ['pkgrepo.managed', 'pkgrepo.absent']:
+        return Schema(dict(schema.items() + pkgrepo_schema.items()))
 
     # Identify arguments and default value. Add to schema dict inheriting
     # type from default value. If no default value, assume string.
